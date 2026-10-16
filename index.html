@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KSRTC SmartTrack — Real-Time Bus Tracking & ETA</title>
+    <meta name="description" content="Official real-time bus tracking, ETA predictions, stop QR directory, and IVR accessibility portal for Karnataka State Road Transport Corporation." />
+    <script>
+      // Make window.fetch writable so external scripts, polyfills, or sandbox proxies can assign to it
+      (function () {
+        try {
+          var originalFetch = window.fetch;
+          var activeFetch = originalFetch;
+          var fetchDescriptor = {
+            configurable: true,
+            enumerable: true,
+            get: function () {
+              return activeFetch;
+            },
+            set: function (newFetch) {
+              activeFetch = newFetch;
+            }
+          };
+
+          try {
+            Object.defineProperty(window, 'fetch', fetchDescriptor);
+          } catch (e) {
+            try {
+              if (typeof Window !== 'undefined' && Window.prototype) {
+                Object.defineProperty(Window.prototype, 'fetch', fetchDescriptor);
+              }
+            } catch (_) {}
+          }
+        } catch (_) {}
+
+        // Global early error and rejection handlers for benign environment/network issues
+        window.addEventListener('error', function (e) {
+          var msg = (e && (e.message || (e.error && e.error.message))) || '';
+          if (
+            msg.indexOf('Cannot set property fetch') !== -1 ||
+            msg.indexOf('only a getter') !== -1 ||
+            msg.indexOf('WebSocket') !== -1 ||
+            msg.indexOf('failed to connect to websocket') !== -1
+          ) {
+            e.preventDefault && e.preventDefault();
+            e.stopImmediatePropagation && e.stopImmediatePropagation();
+            return true;
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', function (e) {
+          var reason = (e && e.reason && (e.reason.message || String(e.reason))) || '';
+          if (
+            reason.indexOf('Cannot set property fetch') !== -1 ||
+            reason.indexOf('only a getter') !== -1 ||
+            reason.indexOf('WebSocket') !== -1 ||
+            reason.indexOf('failed to connect to websocket') !== -1
+          ) {
+            e.preventDefault && e.preventDefault();
+            e.stopImmediatePropagation && e.stopImmediatePropagation();
+          }
+        });
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  </head>
+  <body class="bg-[#0A0D14] text-slate-100 antialiased font-sans selection:bg-blue-600 selection:text-white">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,85 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Passenger, Driver, or Admin user record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "role": { "type": "string", "enum": ["passenger", "driver", "admin"] },
+        "created_at": { "type": "string" }
+      },
+      "required": ["id", "email", "role"]
+    },
+    "BusTelemetry": {
+      "title": "BusTelemetry",
+      "description": "Real-time GPS position, speed, heading, and status of a bus",
+      "type": "object",
+      "properties": {
+        "bus_id": { "type": "string" },
+        "trip_id": { "type": "string" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "speed": { "type": "number" },
+        "heading": { "type": "number" },
+        "accuracy": { "type": "number" },
+        "status": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["bus_id", "latitude", "longitude", "timestamp"]
+    },
+    "Trip": {
+      "title": "Trip",
+      "description": "Active or scheduled bus trip",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "bus_id": { "type": "string" },
+        "driver_id": { "type": "string" },
+        "route_id": { "type": "string" },
+        "status": { "type": "string", "enum": ["scheduled", "in_progress", "paused", "completed", "cancelled"] },
+        "start_time": { "type": "string" },
+        "end_time": { "type": "string" }
+      },
+      "required": ["id", "bus_id", "driver_id", "route_id", "status"]
+    },
+    "PassengerReport": {
+      "title": "PassengerReport",
+      "description": "Grievance, overcrowding, or delay report submitted by a passenger",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "user_id": { "type": "string" },
+        "user_name": { "type": "string" },
+        "user_phone": { "type": "string" },
+        "bus_id": { "type": "string" },
+        "report_type": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "reviewed", "resolved"] },
+        "created_at": { "type": "string" }
+      },
+      "required": ["id", "report_type", "description", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile documents where authenticated users can read/update their own profile."
+    },
+    "/live_telemetry/{busId}": {
+      "schema": "BusTelemetry",
+      "description": "Real-time bus GPS telemetry readable by all users and updatable by authenticated drivers/admins."
+    },
+    "/trips/{tripId}": {
+      "schema": "Trip",
+      "description": "Trips collection readable by all users and manageable by drivers/admins."
+    },
+    "/reports/{reportId}": {
+      "schema": "PassengerReport",
+      "description": "Grievance reports created by passengers and managed by admins."
+    }
+  }
+}

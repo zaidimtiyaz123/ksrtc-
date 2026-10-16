@@ -1,0 +1,195 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-primary: #0A0D14;
+    --bg-surface: #10141F;
+    --bg-surface-elevated: #161C2C;
+    --border-color: #1E2638;
+    --text-primary: #F1F5F9;
+    --text-secondary: #94A3B8;
+    --text-muted: #64748B;
+    --accent-blue: #00F0FF;
+    --accent-blue-hover: #0284C7;
+  }
+
+  body {
+    background-color: #0A0D14;
+    color: #E2E8F0;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+  }
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* 3D Perspective & Isometric Utilities */
+.perspective-800 {
+  perspective: 800px;
+}
+.perspective-1000 {
+  perspective: 1000px;
+}
+.perspective-1200 {
+  perspective: 1200px;
+}
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+/* 3D Map Tilt Mode */
+.map-tilt-3d {
+  transform: perspective(900px) rotateX(24deg) scale(0.97);
+  transform-origin: center bottom;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s ease;
+  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 240, 255, 0.1);
+  border-radius: 20px;
+}
+
+.map-tilt-2d {
+  transform: perspective(900px) rotateX(0deg) scale(1);
+  transform-origin: center bottom;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s ease;
+}
+
+/* 3D Tactile Card */
+.card-3d {
+  background: linear-gradient(135deg, rgba(22, 28, 44, 0.9) 0%, rgba(14, 18, 28, 0.95) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.65), 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.card-3d:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.8), 0 0 24px rgba(0, 240, 255, 0.15);
+  border-color: rgba(0, 240, 255, 0.3);
+}
+
+/* 3D Button Depth */
+.btn-3d {
+  position: relative;
+  transition: all 0.15s ease-out;
+  box-shadow: 0 6px 0 rgba(10, 20, 40, 0.8), 0 10px 20px rgba(0, 0, 0, 0.4);
+}
+.btn-3d:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 rgba(10, 20, 40, 0.8), 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.btn-3d-cyan {
+  background: linear-gradient(180deg, #00F0FF 0%, #0284C7 100%);
+  color: #03101E;
+  font-weight: 800;
+  border-bottom: 3px solid #0369A1;
+  box-shadow: 0 6px 20px rgba(0, 240, 255, 0.35);
+}
+.btn-3d-cyan:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 8px 25px rgba(0, 240, 255, 0.5);
+}
+.btn-3d-cyan:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 10px rgba(0, 240, 255, 0.2);
+}
+
+/* 3D Holographic Bus Marker */
+.leaflet-container {
+  background-color: #0A0D14 !important;
+  outline: none;
+}
+
+.custom-bus-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+  transform-style: preserve-3d;
+}
+
+.custom-bus-pin {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.7), 0 0 15px currentColor;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  position: relative;
+  transform: translateZ(10px);
+}
+
+.pulse-ring {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  border-radius: 16px;
+  border: 2px solid currentColor;
+  opacity: 0.8;
+  animation: pulse-3d 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes pulse-3d {
+  0% {
+    transform: scale(0.9) translateZ(0);
+    opacity: 0.9;
+  }
+  70% {
+    transform: scale(1.35) translateZ(15px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.35) translateZ(15px);
+    opacity: 0;
+  }
+}
+
+/* Radar Pulse Beacon */
+.radar-beacon {
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+.radar-beacon::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.4) 0%, rgba(0, 240, 255, 0) 70%);
+  animation: radar-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes radar-ping {
+  0% {
+    transform: scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+/* Custom dark scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0A0D14;
+}
+::-webkit-scrollbar-thumb {
+  background: #1E2638;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #00F0FF;
+}
+

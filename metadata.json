@@ -1,0 +1,10 @@
+{
+  "name": "KSRTC SmartTrack",
+  "description": "Real-time bus tracking, ETA prediction, driver GPS updates, stop QR system, and IVR accessibility platform for Karnataka State Road Transport Corporation (KSRTC).",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
