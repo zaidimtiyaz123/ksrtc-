@@ -152,7 +152,7 @@ export const PassengerDashboardPage: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                {user?.email || 'passenger@ksrtc.in'} • Karnataka State Smart Passenger Account
+                {user?.email || 'Authenticated Passenger'} • Karnataka State Smart Passenger Account
               </p>
             </div>
           </div>
@@ -545,7 +545,7 @@ export const PassengerDashboardPage: React.FC = () => {
                   </div>
                   <div>
                     <div className="text-xs font-extrabold text-white">SARIGE PASS CARD</div>
-                    <div className="text-[10px] text-slate-400">Govt. of Karnataka Transit Authority</div>
+                    <div className="text-[10px] text-slate-400">KSRTC Transit Authority</div>
                   </div>
                 </div>
                 <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono px-2 py-0.5 rounded-md font-bold">

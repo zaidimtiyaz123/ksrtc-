@@ -33,7 +33,7 @@ interface LiveMapProps {
   showControls?: boolean;
 }
 
-type MapTileStyle = 'voyager' | 'dark' | 'satellite' | 'osm';
+type MapTileStyle = 'street' | 'dark' | 'satellite' | 'osm' | 'topo' | 'voyager';
 
 // Haversine calculation for exact real-world distance in km
 function calculateHaversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -72,7 +72,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
   const userMarkerRef = useRef<L.Marker | null>(null);
   const userAccuracyCircleRef = useRef<L.Circle | null>(null);
 
-  const [tileStyle, setTileStyle] = useState<MapTileStyle>('voyager');
+  const [tileStyle, setTileStyle] = useState<MapTileStyle>('street');
   const [showStopsLayer, setShowStopsLayer] = useState(true);
   const [showBusesLayer, setShowBusesLayer] = useState(true);
   const [isLayerMenuOpen, setIsLayerMenuOpen] = useState(false);
@@ -164,11 +164,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    const layerUrl = getTileUrl(tileStyle);
-    const tileLayer = L.tileLayer(layerUrl, {
-      maxZoom: 19,
-      subdomains: 'abcd',
-    }).addTo(map);
+    const tileLayer = createTileLayer(tileStyle).addTo(map);
     tileLayerRef.current = tileLayer;
 
     L.control.attribution({ position: 'bottomright' })
@@ -198,18 +194,41 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     };
   }, []);
 
-  // 2. Tile URL resolver
-  function getTileUrl(style: MapTileStyle): string {
+  // 2. Tile layer factory with 100% free, reliable, no-API-key tile providers
+  function createTileLayer(style: MapTileStyle): L.TileLayer {
     switch (style) {
       case 'dark':
-        return 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png';
+        return L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+          maxZoom: 19,
+          maxNativeZoom: 16,
+          attribution: '&copy; ESRI Canvas &copy; KSRTC SmartTrack'
+        });
       case 'satellite':
-        return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+        return L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          maxZoom: 19,
+          maxNativeZoom: 18,
+          attribution: '&copy; ESRI World Imagery &copy; Earthstar Geographics'
+        });
       case 'osm':
-        return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+        return L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          subdomains: ['a', 'b', 'c'],
+          attribution: '&copy; OpenStreetMap contributors &copy; HOT'
+        });
+      case 'topo':
+        return L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+          maxZoom: 19,
+          maxNativeZoom: 18,
+          attribution: '&copy; ESRI World Topo &copy; KSRTC'
+        });
+      case 'street':
       case 'voyager':
       default:
-        return 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+        return L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+          maxZoom: 19,
+          maxNativeZoom: 18,
+          attribution: '&copy; ESRI World Street &copy; OpenStreetMap'
+        });
     }
   }
 
@@ -218,11 +237,9 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     setIsLayerMenuOpen(false);
     if (tileLayerRef.current && mapInstanceRef.current) {
       mapInstanceRef.current.removeLayer(tileLayerRef.current);
-      const newLayer = L.tileLayer(getTileUrl(style), {
-        maxZoom: 19,
-        subdomains: 'abcd',
-      }).addTo(mapInstanceRef.current);
+      const newLayer = createTileLayer(style).addTo(mapInstanceRef.current);
       tileLayerRef.current = newLayer;
+      mapInstanceRef.current.invalidateSize();
     }
   };
 
@@ -679,16 +696,22 @@ export const LiveMap: React.FC<LiveMapProps> = ({
               <div className="absolute right-0 mt-2 w-48 bg-[#10141F] border border-[#2A364F] rounded-xl shadow-2xl p-2 z-50 text-xs text-slate-200">
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 px-2">Map Style</div>
                 <div className="space-y-1">
-                  {(['voyager', 'satellite', 'dark', 'osm'] as MapTileStyle[]).map(style => (
+                  {[
+                    { id: 'street', label: 'Street View' },
+                    { id: 'dark', label: 'Dark Mode (Night Radar)' },
+                    { id: 'satellite', label: 'Satellite (ESRI)' },
+                    { id: 'osm', label: 'OpenStreetMap (HOT)' },
+                    { id: 'topo', label: 'Topographic (Terrain)' }
+                  ].map(item => (
                     <button
-                      key={style}
-                      onClick={() => changeTileStyle(style)}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-lg font-medium capitalize flex items-center justify-between cursor-pointer ${
-                        tileStyle === style ? 'bg-cyan-600 text-white font-bold' : 'hover:bg-[#161C2C] text-slate-300'
+                      key={item.id}
+                      onClick={() => changeTileStyle(item.id as MapTileStyle)}
+                      className={`w-full text-left px-2.5 py-1.5 rounded-lg font-medium flex items-center justify-between cursor-pointer ${
+                        (tileStyle === item.id || (tileStyle === 'voyager' && item.id === 'street')) ? 'bg-cyan-600 text-white font-bold' : 'hover:bg-[#161C2C] text-slate-300'
                       }`}
                     >
-                      <span>{style === 'voyager' ? 'Transit Clear' : style}</span>
-                      {tileStyle === style && <span className="w-1.5 h-1.5 rounded-full bg-white"></span>}
+                      <span>{item.label}</span>
+                      {(tileStyle === item.id || (tileStyle === 'voyager' && item.id === 'street')) && <span className="w-1.5 h-1.5 rounded-full bg-white"></span>}
                     </button>
                   ))}
                 </div>

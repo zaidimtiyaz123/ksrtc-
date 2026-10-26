@@ -40,7 +40,8 @@ import {
   Lock,
   Unlock,
   HardDrive,
-  Database
+  Database,
+  Zap
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 

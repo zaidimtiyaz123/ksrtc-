@@ -23,9 +23,11 @@ import {
   Sparkles,
   Crosshair,
   Compass,
-  Layers
+  Layers,
+  Zap
 } from 'lucide-react';
 import { TransitCopilotModal } from '../components/TransitCopilotModal';
+import { PythonDelayForecasterCard } from '../components/PythonDelayForecasterCard';
 
 // Haversine calculation for exact distance
 function getDistKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -343,6 +345,7 @@ export const LiveTrackingPage: React.FC = () => {
             <span>Find Closest Bus to My Location</span>
           </button>
 
+
           {/* Search bar */}
           <div className="relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -542,33 +545,10 @@ export const LiveTrackingPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Telemetry Metrics Grid */}
-            <div className="grid grid-cols-3 gap-2 text-center bg-[#0A0D14] p-2.5 rounded-xl border border-[#1E2638]">
-              <div>
-                <div className="text-[10px] text-slate-400 uppercase font-semibold">Live Speed</div>
-                <div className="text-sm font-bold font-mono text-cyan-300">{selectedBus.speed} km/h</div>
-              </div>
-              <div className="border-x border-[#1E2638]">
-                <div className="text-[10px] text-slate-400 uppercase font-semibold">Next Stop ETA</div>
-                <div className="text-sm font-bold font-mono text-emerald-400">{selectedBus.eta_minutes || 0} min</div>
-              </div>
-              <div>
-                <div className="text-[10px] text-slate-400 uppercase font-semibold">Freshness</div>
-                <div className="text-xs font-bold font-mono text-emerald-300">{selectedBus.seconds_ago}s ago</div>
-              </div>
-            </div>
-
-            {/* Next Stop Callout */}
-            <div className="text-xs text-slate-300 bg-[#161C2C] p-2.5 rounded-xl border border-[#26334A] flex items-center justify-between">
-              <div>
-                <div className="text-[10px] text-slate-400 uppercase">Approaching Next Stop:</div>
-                <div className="font-bold text-white text-xs">{selectedBus.next_stop || selectedBus.destination}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-[10px] text-slate-400">Distance</div>
-                <div className="font-mono font-semibold text-xs text-slate-200">{selectedBus.distance_to_next_km || 0} km</div>
-              </div>
-            </div>
+            {/* Python AI Delay & Quantile Forecast Card */}
+            <PythonDelayForecasterCard
+              telemetry={selectedBus}
+            />
 
             {/* Quick Actions */}
             <div className="flex items-center gap-2 pt-1">

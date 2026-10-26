@@ -15,6 +15,8 @@ interface AuthContextType {
   login: (identifier: string, password?: string, role?: string) => Promise<void>;
   loginDriver: (driverId: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
+  loginWithOtp: (email: string, otp: string) => Promise<void>;
+  requestOtp: (email: string) => Promise<{ success: boolean; message: string; otp?: string }>;
   signup: (name: string, email: string, phone?: string, role?: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -132,6 +134,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Request authentic 6-digit OTP for Email sign-in
+  const requestOtp = async (email: string) => {
+    return await api.requestOtp(email);
+  };
+
+  // Login with verified Email & OTP
+  const loginWithOtp = async (email: string, otp: string) => {
+    setIsLoading(true);
+    try {
+      const data = await api.verifyOtp(email, otp);
+      setUser(data.user);
+      setDriver(null);
+      setToken(data.token);
+
+      localStorage.setItem('ksrtc_user', JSON.stringify(data.user));
+      localStorage.removeItem('ksrtc_driver');
+      localStorage.setItem('ksrtc_token', data.token);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const signup = async (name: string, email: string, phone?: string, assignedRole: string = 'passenger') => {
     setIsLoading(true);
     try {
@@ -173,6 +197,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         loginDriver,
         loginWithGoogle,
+        loginWithOtp,
+        requestOtp,
         signup,
         logout
       }}

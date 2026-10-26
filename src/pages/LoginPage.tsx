@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-do
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
 import {
-  Bus,
   Smartphone,
   ShieldCheck,
   User as UserIcon,
@@ -15,15 +14,12 @@ import {
   CheckCircle2,
   KeyRound,
   ArrowRight,
-  Sparkles,
   MapPin,
   AlertCircle,
-  HelpCircle,
   Clock,
   Phone,
   Radio,
-  Ticket,
-  ChevronRight
+  Ticket
 } from 'lucide-react';
 
 interface DriverRosterItem {
@@ -48,7 +44,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialTab }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { user, role, isAuthenticated, login, loginDriver, loginWithGoogle, signup, isLoading } = useAuth();
+  const { user, role, isAuthenticated, login, loginDriver, loginWithGoogle, loginWithOtp, requestOtp, signup, isLoading } = useAuth();
 
   // If already authenticated, redirect directly to role-specific dashboard
   useEffect(() => {
@@ -114,39 +110,47 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialTab }) => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Handle Passenger Email Login
+  // Handle Passenger Email / OTP Login
   const handlePassengerEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccessMessage(null);
 
     if (!passengerEmail.trim()) {
-      setError('Please enter your registered passenger email ID.');
+      setError('Please enter your registered passenger email address.');
       return;
     }
 
     if (useOtpLogin) {
-      if (!otpSent || !sentOtpValue) {
-        setError('Please request a One-Time Code first.');
+      if (!otpSent) {
+        setError('Please click "Send One-Time Code" first to receive your 6-digit OTP.');
         return;
       }
-      if (otpCode.trim() !== sentOtpValue) {
-        setError('Invalid security code. Please check the code sent to your screen.');
+      if (!otpCode.trim() || otpCode.trim().length !== 6) {
+        setError('Please enter the complete 6-digit verification code.');
         return;
+      }
+
+      try {
+        await loginWithOtp(passengerEmail.trim(), otpCode.trim());
+        setSuccessMessage(`Welcome! Authenticated via verified OTP. Redirecting to Passenger Dashboard...`);
+        setTimeout(() => navigate('/passenger'), 500);
+      } catch (err: any) {
+        setError(err.message || 'Verification failed. Please check the OTP code and try again.');
       }
     } else {
       if (!passengerPassword) {
         setError('Please enter your account password.');
         return;
       }
-    }
 
-    try {
-      await login(passengerEmail.trim(), passengerPassword || 'passenger123', 'passenger');
-      setSuccessMessage(`Welcome! Authenticated as ${passengerEmail}. Redirecting to Passenger Dashboard...`);
-      setTimeout(() => navigate('/passenger'), 500);
-    } catch (err: any) {
-      setError(err.message || 'Passenger login failed. Please check your credentials.');
+      try {
+        await login(passengerEmail.trim(), passengerPassword, 'passenger');
+        setSuccessMessage(`Welcome! Authenticated as ${passengerEmail.trim()}. Redirecting to Passenger Dashboard...`);
+        setTimeout(() => navigate('/passenger'), 500);
+      } catch (err: any) {
+        setError(err.message || 'Passenger login failed. Please check your credentials.');
+      }
     }
   };
 
@@ -170,17 +174,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialTab }) => {
     }
   };
 
-  // Request OTP
-  const handleSendOtp = () => {
-    if (!passengerEmail.trim()) {
-      setError('Please enter your email to receive an OTP.');
+  // Request authentic OTP
+  const handleSendOtp = async () => {
+    if (!passengerEmail.trim() || !passengerEmail.includes('@')) {
+      setError('Please enter a valid email address to receive a One-Time Code.');
       return;
     }
     setError(null);
-    const code = Math.floor(1000 + Math.random() * 9000).toString();
-    setSentOtpValue(code);
-    setOtpSent(true);
-    setSuccessMessage(`One-time security code sent to ${passengerEmail}: ${code}`);
+    try {
+      const res = await requestOtp(passengerEmail.trim());
+      setOtpSent(true);
+      setSentOtpValue(res.otp || '');
+      setSuccessMessage(res.message || `A 6-digit verification code has been dispatched to ${passengerEmail.trim()}.`);
+    } catch (err: any) {
+      setError(err.message || 'Failed to dispatch verification code. Please try again.');
+    }
   };
 
   // Handle Passenger Google Sign-In
@@ -276,54 +284,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialTab }) => {
           </div>
         )}
 
-        {/* 1-Click Demo Profiles & Return to Portal */}
-        <div className="max-w-xl mx-auto mb-6 p-3 rounded-2xl bg-[#121622] border border-[#1F2738] flex flex-wrap items-center justify-between gap-2.5">
-          <div className="flex items-center gap-1.5 text-xs text-slate-300 font-semibold">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>Instant Demo:</span>
-          </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button
-              type="button"
-              onClick={async () => {
-                setError(null);
-                await login('passenger@ksrtc.in', 'passenger123', 'passenger');
-                navigate('/passenger');
-              }}
-              className="px-2.5 py-1 rounded-lg bg-blue-950/60 hover:bg-blue-900/80 border border-blue-700/50 text-[11px] font-bold text-blue-300 transition-colors cursor-pointer"
-            >
-              Passenger
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                setError(null);
-                await login('DRV-101', 'driver123', 'driver');
-                navigate('/driver');
-              }}
-              className="px-2.5 py-1 rounded-lg bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-700/50 text-[11px] font-bold text-emerald-300 transition-colors cursor-pointer"
-            >
-              Driver
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                setError(null);
-                await login('admin@ksrtc.in', 'admin123', 'admin');
-                navigate('/admin');
-              }}
-              className="px-2.5 py-1 rounded-lg bg-amber-950/60 hover:bg-amber-900/80 border border-amber-700/50 text-[11px] font-bold text-amber-300 transition-colors cursor-pointer"
-            >
-              Admin HQ
-            </button>
-            <Link
-              to="/"
-              className="px-2.5 py-1 rounded-lg bg-[#1B2232] hover:bg-[#222B3E] border border-[#2B374E] text-[11px] font-semibold text-slate-300 hover:text-white transition-colors"
-            >
-              Public Portal ➔
-            </Link>
-          </div>
-        </div>
+
 
         {/* Role Tabs */}
         <div className="grid grid-cols-3 gap-1.5 sm:gap-2 p-1.5 bg-[#14171F] border border-[#232836] rounded-2xl max-w-xl mx-auto mb-8 shadow-inner">
@@ -466,36 +427,44 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialTab }) => {
                       </div>
                     </div>
                   ) : (
-                    <div>
+                    <div className="space-y-2">
                       <div className="flex items-center justify-between mb-1">
                         <label className="font-bold text-slate-300 uppercase">
-                          4-Digit One-Time Password (OTP)
+                          6-Digit One-Time Password (OTP)
                         </label>
                         <button
                           type="button"
-                          onClick={() => setUseOtpLogin(false)}
-                          className="text-[11px] text-blue-400 hover:underline"
+                          onClick={() => { setUseOtpLogin(false); setError(null); }}
+                          className="text-[11px] text-blue-400 hover:underline cursor-pointer"
                         >
                           Use password instead
                         </button>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2.5">
                         <input
+                          id="passenger-otp-input"
                           type="text"
-                          maxLength={4}
-                          placeholder="••••"
+                          inputMode="numeric"
+                          maxLength={6}
+                          placeholder="••••••"
                           value={otpCode}
-                          onChange={e => setOtpCode(e.target.value)}
-                          className="w-32 bg-[#181C26] border border-[#262B3A] rounded-xl px-3 py-2.5 font-mono text-center text-base tracking-widest text-white focus:border-blue-500 focus:outline-none"
+                          onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                          className="w-36 bg-[#181C26] border border-[#262B3A] rounded-xl px-3 py-2.5 font-mono text-center text-lg tracking-widest text-white focus:border-blue-500 focus:outline-none"
                         />
                         <button
                           type="button"
                           onClick={handleSendOtp}
-                          className="flex-1 bg-[#1E2330] hover:bg-[#252C3D] border border-[#2C3448] text-slate-200 font-bold px-3 py-2.5 rounded-xl transition-colors text-xs"
+                          disabled={isLoading}
+                          className="flex-1 bg-[#1E2330] hover:bg-[#252C3D] border border-[#2C3448] text-slate-200 font-bold px-3 py-2.5 rounded-xl transition-colors text-xs cursor-pointer disabled:opacity-50"
                         >
-                          {otpSent ? 'Resend OTP' : 'Send One-Time Code'}
+                          {otpSent ? 'Resend 6-Digit OTP' : 'Send One-Time Code'}
                         </button>
                       </div>
+                      <p className="text-[11px] text-slate-500">
+                        {otpSent
+                          ? 'A 6-digit verification code was sent to your email. Enter it above to sign in.'
+                          : 'Click "Send One-Time Code" to receive an authentic security passcode.'}
+                      </p>
                     </div>
                   )}
 
@@ -503,9 +472,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialTab }) => {
                     id="passenger-submit-btn"
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50"
+                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 cursor-pointer"
                   >
-                    <span>{isLoading ? 'Verifying Account...' : 'Sign In to Passenger Dashboard'}</span>
+                    <span>
+                      {isLoading
+                        ? 'Verifying...'
+                        : useOtpLogin
+                        ? 'Verify OTP & Enter Dashboard'
+                        : 'Sign In to Passenger Dashboard'}
+                    </span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </form>

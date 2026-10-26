@@ -139,6 +139,19 @@ export interface LiveBusTelemetry {
   eta_minutes?: number;
   distance_to_next_km?: number;
   trip_status: TripStatus;
+  // Python AI Delay Forecasting Pipeline Fields
+  delay_minutes?: number;
+  delay_category?: 'ON_TIME' | 'MINOR_DELAY' | 'MODERATE_DELAY' | 'HEAVY_CONGESTION';
+  confidence_score?: number;
+  interval?: {
+    p10_minutes: number;
+    p50_minutes: number;
+    p90_minutes: number;
+  };
+  delay_cause?: string;
+  corridor_bottleneck?: string;
+  calibrated_speed_kmh?: number;
+  pipeline_engine?: string;
 }
 
 export interface ETAInfo {

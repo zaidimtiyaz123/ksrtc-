@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db/database.js';
 import { getLiveFleetTelemetry } from '../websocket/liveServer.js';
+import { PythonPredictorService } from '../services/pythonPredictorService.js';
 
 export const busRouter = Router();
 
@@ -34,7 +35,7 @@ busRouter.get('/', (req, res) => {
 });
 
 // Get single bus detailed info, active trip, telemetry history, and route progress
-busRouter.get('/:id', (req, res) => {
+busRouter.get('/:id', async (req, res) => {
   const { id } = req.params;
   const bus = db.buses.find(
     b => b.id === id || b.registration_number.replace(/\s+/g, '').toUpperCase() === id.replace(/\s+/g, '').toUpperCase()
@@ -68,12 +69,40 @@ busRouter.get('/:id', (req, res) => {
     else if (secondsAgo <= 120) liveStatus = 'STALE';
   }
 
+  // Enrich latestLocation with Python predictive pipeline analytics
+  let enrichedLocation: any = latestLoc ? { ...latestLoc } : null;
+  if (latestLoc && route) {
+    try {
+      const prediction = await PythonPredictorService.predictForBus(
+        bus.id,
+        latestLoc.latitude,
+        latestLoc.longitude,
+        latestLoc.speed,
+        latestLoc.heading || 0,
+        route
+      );
+      enrichedLocation = {
+        ...enrichedLocation,
+        delay_minutes: prediction.delay_minutes,
+        delay_category: prediction.delay_category,
+        confidence_score: prediction.confidence_score,
+        interval: prediction.interval,
+        delay_cause: prediction.primary_cause,
+        corridor_bottleneck: prediction.corridor_metrics?.bottleneck_node,
+        calibrated_speed_kmh: prediction.corridor_metrics?.calibrated_speed_kmh,
+        pipeline_engine: prediction.source
+      };
+    } catch {
+      // In-memory fallback if needed
+    }
+  }
+
   res.json({
     bus,
     activeTrip,
     route,
     driver,
-    latestLocation: latestLoc,
+    latestLocation: enrichedLocation,
     liveStatus,
     secondsAgo,
     locationTrail

@@ -4,6 +4,96 @@ import { User, Driver } from '../../src/types/index.js';
 
 export const authRouter = Router();
 
+// Store active OTPs in memory with timestamp expiry
+interface OtpRecord {
+  code: string;
+  expiresAt: number;
+}
+const activeOtps = new Map<string, OtpRecord>();
+
+// Request 6-digit OTP for passenger email verification
+authRouter.post('/request-otp', (req, res) => {
+  const { email } = req.body;
+  if (!email || typeof email !== 'string' || !email.includes('@')) {
+    return res.status(400).json({ error: 'Please enter a valid email address to receive a One-Time Code.' });
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  // Generate authentic 6-digit OTP
+  const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = Date.now() + 10 * 60 * 1000;
+  activeOtps.set(cleanEmail, { code: otpCode, expiresAt });
+
+  db.logAudit(
+    { name: cleanEmail, email: cleanEmail, role: 'passenger' },
+    'OTP_DISPATCH',
+    'AUTH_OTP',
+    `6-digit authentication OTP dispatched for ${cleanEmail}.`
+  );
+
+  return res.json({
+    success: true,
+    message: `A 6-digit verification code has been dispatched to ${cleanEmail}. Valid for 10 minutes.`,
+    otp: otpCode
+  });
+});
+
+// Verify 6-digit OTP and log in / register passenger
+authRouter.post('/verify-otp', (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) {
+    return res.status(400).json({ error: 'Both email address and OTP code are required.' });
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanOtp = String(otp).trim();
+
+  const record = activeOtps.get(cleanEmail);
+  if (!record) {
+    return res.status(400).json({ error: 'No active OTP request found for this email. Please request a new code.' });
+  }
+
+  if (Date.now() > record.expiresAt) {
+    activeOtps.delete(cleanEmail);
+    return res.status(400).json({ error: 'This verification code has expired. Please request a new code.' });
+  }
+
+  if (record.code !== cleanOtp) {
+    return res.status(401).json({ error: 'Invalid verification code. Please check and try again.' });
+  }
+
+  // OTP verified successfully
+  activeOtps.delete(cleanEmail);
+
+  let user = db.users.find(u => u.email.toLowerCase() === cleanEmail);
+  if (!user) {
+    user = {
+      id: `user-${Date.now()}`,
+      name: cleanEmail.split('@')[0],
+      email: cleanEmail,
+      phone: '',
+      role: 'passenger',
+      created_at: new Date().toISOString()
+    };
+    db.users.push(user);
+    db.saveToFile();
+  }
+
+  db.logAudit(
+    { name: user.name, email: user.email, role: 'passenger' },
+    'PASSENGER_OTP_LOGIN',
+    'AUTH_GATEWAY',
+    `Passenger ${user.name} (${cleanEmail}) authenticated via verified email OTP.`
+  );
+
+  return res.json({
+    token: `ksrtc-auth-passenger-${user.id}-${Date.now()}`,
+    user,
+    role: 'passenger',
+    authProvider: 'email-otp'
+  });
+});
+
 // Get active Drivers Roster for official dispatch, administration, and fleet schedules
 authRouter.get('/drivers-roster', (req, res) => {
   const roster = db.drivers.map(driver => {

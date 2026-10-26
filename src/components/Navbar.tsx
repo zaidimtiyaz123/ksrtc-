@@ -26,7 +26,6 @@ import {
   Navigation2
 } from 'lucide-react';
 import { TransitCopilotModal } from './TransitCopilotModal';
-import { ApiDiagnosticsModal } from './ApiDiagnosticsModal';
 
 export const Navbar: React.FC = () => {
   const { user, role, logout, login } = useAuth();
@@ -40,7 +39,6 @@ export const Navbar: React.FC = () => {
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [isAuthMenuOpen, setIsAuthMenuOpen] = useState(false);
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
-  const [isApiDiagnosticsOpen, setIsApiDiagnosticsOpen] = useState(false);
 
   // Close menus on route change
   useEffect(() => {
@@ -302,17 +300,6 @@ export const Navbar: React.FC = () => {
               <span>AI Copilot</span>
             </button>
 
-            {/* API Diagnostics Scanner */}
-            <button
-              type="button"
-              onClick={() => setIsApiDiagnosticsOpen(true)}
-              className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-[#121722] hover:bg-[#1A2232] border border-[#1E2536] text-xs font-bold text-slate-300 hover:text-white transition-all cursor-pointer"
-              title="API & Service Health Diagnostics"
-            >
-              <Activity className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="hidden xl:inline">API</span>
-            </button>
-
             {/* Language Dropdown Selector */}
             <div className="relative">
               <button
@@ -505,59 +492,11 @@ export const Navbar: React.FC = () => {
                       </div>
                     </Link>
 
-                    <div className="pt-1.5 border-t border-[#1E2536] space-y-1">
-                      <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                        Instant Demo Profiles
-                      </div>
-                      <button
-                        onClick={async () => {
-                          setIsAuthMenuOpen(false);
-                          await login('passenger@ksrtc.in', 'passenger123', 'passenger');
-                          navigate('/passenger');
-                        }}
-                        className="w-full text-left px-3 py-1.5 rounded-xl text-[11px] font-medium text-slate-300 hover:text-white hover:bg-[#1A2234] flex items-center justify-between transition-colors cursor-pointer"
-                      >
-                        <span className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-                          <span>Passenger (Ramesh)</span>
-                        </span>
-                        <span className="text-[10px] text-blue-400 font-mono">1-Click</span>
-                      </button>
-                      <button
-                        onClick={async () => {
-                          setIsAuthMenuOpen(false);
-                          await login('DRV-101', 'driver123', 'driver');
-                          navigate('/driver');
-                        }}
-                        className="w-full text-left px-3 py-1.5 rounded-xl text-[11px] font-medium text-slate-300 hover:text-white hover:bg-[#1A2234] flex items-center justify-between transition-colors cursor-pointer"
-                      >
-                        <span className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                          <span>Driver (Basavaraj)</span>
-                        </span>
-                        <span className="text-[10px] text-emerald-400 font-mono">1-Click</span>
-                      </button>
-                      <button
-                        onClick={async () => {
-                          setIsAuthMenuOpen(false);
-                          await login('admin@ksrtc.in', 'admin123', 'admin');
-                          navigate('/admin');
-                        }}
-                        className="w-full text-left px-3 py-1.5 rounded-xl text-[11px] font-medium text-slate-300 hover:text-white hover:bg-[#1A2234] flex items-center justify-between transition-colors cursor-pointer"
-                      >
-                        <span className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                          <span>Fleet Admin HQ</span>
-                        </span>
-                        <span className="text-[10px] text-amber-400 font-mono">1-Click</span>
-                      </button>
-                    </div>
-
-                    <div className="pt-1 border-t border-[#1E2536]">
+                    <div className="pt-2 border-t border-[#1E2536]">
                       <Link
                         to="/login"
                         onClick={() => setIsAuthMenuOpen(false)}
-                        className="block text-center py-1.5 text-[11px] font-bold text-blue-400 hover:text-blue-300 transition-colors"
+                        className="block text-center py-2 px-3 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/20 text-xs font-bold text-blue-400 hover:text-blue-300 transition-colors"
                       >
                         All Authentication Options ➔
                       </Link>
@@ -837,21 +776,10 @@ export const Navbar: React.FC = () => {
                 setIsMobileMenuOpen(false);
                 setIsCopilotOpen(true);
               }}
-              className="flex-1 py-2 px-3 rounded-xl bg-purple-600 text-white text-xs font-bold flex items-center justify-center gap-1.5"
+              className="flex-1 py-2 px-3 rounded-xl bg-purple-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>AI Transit Copilot</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setIsMobileMenuOpen(false);
-                setIsApiDiagnosticsOpen(true);
-              }}
-              className="py-2 px-3 rounded-xl bg-[#1A202C] text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center gap-1"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>API Health</span>
             </button>
           </div>
         </div>
@@ -861,11 +789,6 @@ export const Navbar: React.FC = () => {
       <TransitCopilotModal
         isOpen={isCopilotOpen}
         onClose={() => setIsCopilotOpen(false)}
-      />
-
-      <ApiDiagnosticsModal
-        isOpen={isApiDiagnosticsOpen}
-        onClose={() => setIsApiDiagnosticsOpen(false)}
       />
     </header>
   );

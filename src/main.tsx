@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
+import 'leaflet/dist/leaflet.css';
 import './index.css';
 
 // Ensure window.fetch is writable and configurable across all prototype levels

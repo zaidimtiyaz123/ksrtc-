@@ -68,6 +68,14 @@
       "phone": "+91 98450 00000",
       "role": "passenger",
       "created_at": "2026-09-17T16:32:18.818Z"
+    },
+    {
+      "id": "user-1792164762358",
+      "name": "test.passenger",
+      "email": "test.passenger@gmail.com",
+      "phone": "",
+      "role": "passenger",
+      "created_at": "2026-10-16T15:32:42.358Z"
     }
   ],
   "drivers": [
@@ -9669,6 +9677,36 @@
   "sosAlerts": [],
   "auditLogs": [
     {
+      "id": "audit-1792164779575-593",
+      "timestamp": "2026-10-16T15:32:59.575Z",
+      "actor_name": "passenger2@example.com",
+      "actor_email": "passenger2@example.com",
+      "actor_role": "passenger",
+      "action": "OTP_DISPATCH",
+      "entity": "AUTH_OTP",
+      "details": "6-digit authentication OTP dispatched for passenger2@example.com."
+    },
+    {
+      "id": "audit-1792164762361-380",
+      "timestamp": "2026-10-16T15:32:42.361Z",
+      "actor_name": "test.passenger",
+      "actor_email": "test.passenger@gmail.com",
+      "actor_role": "passenger",
+      "action": "PASSENGER_OTP_LOGIN",
+      "entity": "AUTH_GATEWAY",
+      "details": "Passenger test.passenger (test.passenger@gmail.com) authenticated via verified email OTP."
+    },
+    {
+      "id": "audit-1792164752971-211",
+      "timestamp": "2026-10-16T15:32:32.971Z",
+      "actor_name": "test.passenger@gmail.com",
+      "actor_email": "test.passenger@gmail.com",
+      "actor_role": "passenger",
+      "action": "OTP_DISPATCH",
+      "entity": "AUTH_OTP",
+      "details": "6-digit authentication OTP dispatched for test.passenger@gmail.com."
+    },
+    {
       "id": "audit-1789047416407-915",
       "timestamp": "2026-09-10T13:36:56.407Z",
       "actor_name": "Mohammed Imtiyaz (Chief Transport Controller & Super Admin)",
@@ -9728,6 +9766,6 @@
       "completed_at": "2026-09-08T13:28:21.687Z"
     }
   ],
-  "saved_at": "2026-09-17T17:05:46.473Z",
-  "transaction_count": 1
+  "saved_at": "2026-10-16T15:32:59.576Z",
+  "transaction_count": 4
 }

@@ -292,6 +292,32 @@ export const api = {
     return res.json();
   },
 
+  async requestOtp(email: string): Promise<{ success: boolean; message: string; otp?: string }> {
+    const res = await fetch(`${API_BASE}/auth/request-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Failed to request OTP' }));
+      throw new Error(err.error || 'Failed to request OTP');
+    }
+    return res.json();
+  },
+
+  async verifyOtp(email: string, otp: string): Promise<{ token: string; user: User; role: string }> {
+    const res = await fetch(`${API_BASE}/auth/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Invalid or expired OTP' }));
+      throw new Error(err.error || 'Invalid or expired OTP');
+    }
+    return res.json();
+  },
+
   async login(identifier: string, password?: string, role?: string) {
     const res = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
@@ -1092,25 +1118,18 @@ export const api = {
     return res.json();
   },
 
-  async getGoogleMapsConfig(): Promise<{ apiKey: string; configured: boolean; invalidKeyDetected?: boolean; invalidKeyReason?: string }> {
+  async getGoogleMapsConfig(): Promise<{ provider?: string; configured: boolean; freeTier?: boolean; apiKey?: string }> {
     try {
       const res = await fetch(`${API_BASE}/config/maps`);
       if (res.ok) {
-        const data = await res.json();
-        return data;
+        return await res.json();
       }
     } catch {}
-    const rawKey = ((import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY || '').trim();
-    const isValid = rawKey.startsWith('AIza') && rawKey.length >= 20;
     return {
-      apiKey: isValid ? rawKey : '',
-      configured: isValid,
-      invalidKeyDetected: Boolean(rawKey && !isValid),
-      invalidKeyReason: Boolean(rawKey && !isValid)
-        ? (rawKey.startsWith('nvapi-')
-            ? 'An NVIDIA API key was configured instead of a Google Maps Platform key.'
-            : 'Key does not match Google Maps Platform API key format (must start with "AIza").')
-        : undefined
+      provider: 'leaflet-osm',
+      configured: true,
+      freeTier: true,
+      apiKey: ''
     };
   },
 
@@ -1130,7 +1149,7 @@ export const api = {
           status: 'active',
           isKeyRequired: false,
           health: 'healthy',
-          message: '100% Free & Unlimited. Zero API key required.',
+          message: '100% Free & Unlimited. Active across all views.',
           action: 'Always active.'
         }
       ],
@@ -1344,6 +1363,83 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ bus_id: busId })
     });
+    return res.json();
+  },
+
+  // Python Predictive Pipeline & AI Delay Analytics
+  async getPythonPipelineMetrics(): Promise<{
+    service: string;
+    version: string;
+    pythonRuntime: string;
+    metrics: {
+      totalExecutions: number;
+      successfulPythonRuns: number;
+      fallbackRuns: number;
+      avgLatencyMs: number;
+      lastExecutionAt: string;
+    };
+  }> {
+    const res = await fetch(`${API_BASE}/analytics/pipeline-metrics`);
+    if (!res.ok) throw new Error('Failed to fetch Python pipeline metrics');
+    return res.json();
+  },
+
+  async predictDelayWithPython(payload: {
+    bus_id?: string;
+    latitude?: number;
+    longitude?: number;
+    speed?: number;
+    heading?: number;
+    route_id?: string;
+    recent_speeds?: number[];
+    scenario?: any;
+  }) {
+    const res = await fetch(`${API_BASE}/analytics/predict-delay`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('Failed to run Python delay prediction');
+    return res.json();
+  },
+
+  async simulateCorridorScenario(payload: {
+    route_id: string;
+    slowdown_percent: number;
+    incident_type: string;
+    weather_impact?: string;
+  }) {
+    const res = await fetch(`${API_BASE}/analytics/simulate-corridor-scenario`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Failed to simulate scenario' }));
+      throw new Error(err.error || 'Failed to simulate scenario');
+    }
+    return res.json();
+  },
+
+  async getCorridorDelaySummary(): Promise<{
+    success: boolean;
+    corridors: Array<{
+      route_id: string;
+      route_number: string;
+      route_name: string;
+      distance_km: number;
+      active_buses: number;
+      delay_minutes: number;
+      delay_category: 'ON_TIME' | 'MINOR_DELAY' | 'MODERATE_DELAY' | 'HEAVY_CONGESTION';
+      primary_cause: string;
+      confidence_score: number;
+      calibrated_speed_kmh: number;
+      bottleneck_node?: string | null;
+    }>;
+    timestamp: string;
+  }> {
+    const res = await fetch(`${API_BASE}/analytics/corridor-delay-summary`);
+    if (!res.ok) throw new Error('Failed to fetch corridor delay summary');
     return res.json();
   }
 };

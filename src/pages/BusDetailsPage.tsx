@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
-import { Bus, Route, Driver, BusLocation, BusLiveStatus, Trip } from '../types';
+import { Bus, Route, Driver, BusLocation, BusLiveStatus, Trip, LiveBusTelemetry } from '../types';
+import { PythonDelayForecasterCard } from '../components/PythonDelayForecasterCard';
 import {
   Bus as BusIcon,
   MapPin,
@@ -213,12 +214,56 @@ export const BusDetailsPage: React.FC = () => {
         {/* Main Details Grid: Stops Checklist + Speed Graph */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Route Stops Sequence Checklist */}
-          <div className="lg:col-span-2 bg-[#15181E] rounded-2xl p-6 border border-[#222732] shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-[#222732] pb-3">
-              <div>
-                <h2 className="text-base font-bold text-white">Trip Stop Sequence & Schedule</h2>
-                <p className="text-xs text-slate-400">Live progression along the transit corridor</p>
-              </div>
+          <div className="lg:col-span-2 space-y-4">
+            {/* Live Python Delay Forecast Card */}
+            {latestLocation && (
+              <PythonDelayForecasterCard
+                telemetry={{
+                  bus_id: bus.id,
+                  registration_number: bus.registration_number,
+                  fleet_number: bus.fleet_number,
+                  model: bus.model,
+                  trip_id: activeTrip?.id || '',
+                  driver_name: driver?.name || 'Driver',
+                  driver_code: driver?.driver_code || 'DRV-000',
+                  route_id: route?.id || '',
+                  route_number: route?.route_number || '',
+                  route_name: route?.route_name || '',
+                  origin: route?.origin || '',
+                  destination: route?.destination || '',
+                  latitude: latestLocation.latitude,
+                  longitude: latestLocation.longitude,
+                  accuracy: latestLocation.accuracy,
+                  speed: latestLocation.speed,
+                  heading: latestLocation.heading,
+                  timestamp: latestLocation.timestamp,
+                  status: liveStatus,
+                  seconds_ago: secondsAgo,
+                  next_stop: latestLocation.next_stop_name,
+                  next_stop_name: latestLocation.next_stop_name,
+                  next_stop_id: latestLocation.next_stop_id,
+                  eta_minutes: latestLocation.eta_minutes,
+                  distance_to_next_km: latestLocation.distance_to_next_stop_km,
+                  trip_status: activeTrip?.status || 'in_progress',
+                  // Inbuilt Python Prediction & AI Delay metrics
+                  delay_minutes: (latestLocation as any).delay_minutes,
+                  delay_category: (latestLocation as any).delay_category,
+                  confidence_score: (latestLocation as any).confidence_score,
+                  interval: (latestLocation as any).interval,
+                  delay_cause: (latestLocation as any).delay_cause,
+                  corridor_bottleneck: (latestLocation as any).corridor_bottleneck,
+                  calibrated_speed_kmh: (latestLocation as any).calibrated_speed_kmh,
+                  pipeline_engine: (latestLocation as any).pipeline_engine
+                }}
+              />
+            )}
+
+            <div className="bg-[#15181E] rounded-2xl p-6 border border-[#222732] shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-[#222732] pb-3">
+                <div>
+                  <h2 className="text-base font-bold text-white">Trip Stop Sequence & Schedule</h2>
+                  <p className="text-xs text-slate-400">Live progression along the transit corridor</p>
+                </div>
               {route && (
                 <span className="text-xs font-bold text-slate-300 bg-[#1B1E26] border border-[#262B37] px-3 py-1 rounded-lg">
                   {route.distance_km} km • {route.estimated_duration_min} min
@@ -272,6 +317,7 @@ export const BusDetailsPage: React.FC = () => {
               })}
             </div>
           </div>
+        </div>
 
           {/* Speed Chart & Vehicle Specs */}
           <div className="space-y-6">

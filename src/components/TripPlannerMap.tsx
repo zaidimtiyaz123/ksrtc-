@@ -1,16 +1,52 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { TripPlanOption, TripLeg } from '../types';
+import { Layers, Check } from 'lucide-react';
 
 interface TripPlannerMapProps {
   selectedOption: TripPlanOption | null;
   className?: string;
 }
 
+type TripPlannerLayer = 'voyager' | 'dark' | 'satellite' | 'osm';
+
 export const TripPlannerMap: React.FC<TripPlannerMapProps> = ({ selectedOption, className = 'h-full w-full' }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
+  const [activeLayer, setActiveLayer] = useState<TripPlannerLayer>('voyager');
+  const [isLayerMenuOpen, setIsLayerMenuOpen] = useState(false);
+
+  const createTileLayer = (style: TripPlannerLayer): L.TileLayer => {
+    switch (style) {
+      case 'dark':
+        return L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+          maxZoom: 19,
+          maxNativeZoom: 16,
+          attribution: '&copy; ESRI Canvas &copy; KSRTC'
+        });
+      case 'satellite':
+        return L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          maxZoom: 19,
+          maxNativeZoom: 18,
+          attribution: '&copy; ESRI World Imagery'
+        });
+      case 'osm':
+        return L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          subdomains: ['a', 'b', 'c'],
+          attribution: '&copy; OpenStreetMap &copy; HOT'
+        });
+      case 'voyager':
+      default:
+        return L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+          maxZoom: 19,
+          maxNativeZoom: 18,
+          attribution: '&copy; ESRI World Street &copy; KSRTC'
+        });
+    }
+  };
 
   // Initialize Leaflet Map
   useEffect(() => {
@@ -26,22 +62,37 @@ export const TripPlannerMap: React.FC<TripPlannerMapProps> = ({ selectedOption, 
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // High performance CartoDB Dark Matter / Transit Tile Layer
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19,
-      subdomains: 'abcd'
-    }).addTo(map);
+    const tileLayer = createTileLayer(activeLayer).addTo(map);
+    tileLayerRef.current = tileLayer;
 
     const layerGroup = L.layerGroup().addTo(map);
     mapInstanceRef.current = map;
     layerGroupRef.current = layerGroup;
 
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 200);
+
     return () => {
+      clearTimeout(timer);
       map.remove();
       mapInstanceRef.current = null;
       layerGroupRef.current = null;
+      tileLayerRef.current = null;
     };
   }, []);
+
+  // Update tile layer on change
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    const map = mapInstanceRef.current;
+    if (tileLayerRef.current) {
+      map.removeLayer(tileLayerRef.current);
+    }
+    const newLayer = createTileLayer(activeLayer).addTo(map);
+    tileLayerRef.current = newLayer;
+    map.invalidateSize();
+  }, [activeLayer]);
 
   // Update map contents when selectedOption changes
   useEffect(() => {
@@ -382,6 +433,55 @@ export const TripPlannerMap: React.FC<TripPlannerMapProps> = ({ selectedOption, 
       <div className="absolute top-3 left-3 z-[400] flex items-center gap-2 bg-[#0B0F19]/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-[#1E293B] shadow-xl text-xs font-mono text-slate-300">
         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
         <span>KSRTC Corridor Route Geometry & Live Telemetry</span>
+      </div>
+
+      {/* Floating Layer Controls */}
+      <div className="absolute top-3 right-3 z-[400]">
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setIsLayerMenuOpen(prev => !prev)}
+            className="px-2.5 h-8 rounded-xl bg-[#0B0F19]/90 hover:bg-[#1A2233] text-slate-200 hover:text-white border border-[#1E293B] flex items-center gap-1.5 shadow-xl text-xs font-bold cursor-pointer transition-all"
+            title="Switch Map Tile Layer"
+          >
+            <Layers className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="capitalize">{activeLayer}</span>
+          </button>
+
+          {isLayerMenuOpen && (
+            <div className="absolute right-0 top-10 w-44 bg-[#0B0F19] border border-[#1E293B] rounded-xl shadow-2xl p-1.5 flex flex-col gap-1 z-[500] animate-in fade-in duration-150">
+              <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-[#1E293B]">
+                Map Layer
+              </div>
+              {[
+                { id: 'voyager', label: 'Street View' },
+                { id: 'dark', label: 'Dark Mode' },
+                { id: 'satellite', label: 'Satellite (ESRI)' },
+                { id: 'osm', label: 'OpenStreetMap (HOT)' }
+              ].map(opt => {
+                const isSelected = activeLayer === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveLayer(opt.id as TripPlannerLayer);
+                      setIsLayerMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between cursor-pointer transition-all ${
+                      isSelected
+                        ? 'bg-emerald-600/20 text-emerald-300 font-bold border border-emerald-500/30'
+                        : 'text-slate-300 hover:bg-[#151D2E] hover:text-white'
+                    }`}
+                  >
+                    <span>{opt.label}</span>
+                    {isSelected && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

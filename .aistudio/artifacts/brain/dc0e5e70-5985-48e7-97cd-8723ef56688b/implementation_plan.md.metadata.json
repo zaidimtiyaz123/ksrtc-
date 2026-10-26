@@ -1,0 +1,6 @@
+{
+  "summary":  "Implementation plan for replacing Google Maps with a 100% free open-source mapping engine (Leaflet + OpenStreetMap + CartoDB + ESRI Satellite), featuring adaptive transit theming and interactive layer switching controls across Driver Cockpit, Live Tracking, and Trip Planner.",
+  "updatedAt":  "2026-10-26T12:44:05.814009370Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}
